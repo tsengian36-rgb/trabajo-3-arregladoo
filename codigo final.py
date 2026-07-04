@@ -1,5 +1,6 @@
 #Tarea de Recuperación-Evaluación 2
 #Fundamentos de Data Science 
+#Prediccion de incumplimiento de credito usando un MLP (red neuronal).
 
 import os 
 import numpy as np 
@@ -14,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import (accuracy_score, confusion_matrix, classification_report, ConfusionMatrixDisplay, roc_auc_score, RocCurveDisplay)
 
-# Configuracion general y reproducibilidad.
+# Reproducibilidad: semilla fija para que los resultados no cambien entre corridas.
 SEED = 42
 np.random.seed(SEED)
 
@@ -49,6 +50,9 @@ with open(os.path.join(CARPETA_RESULTADOS, "eda_resumen.txt"), "w") as f:
   f.write("Balance de clases (incumplimiento):\n")
   f.write(str(df["incumplimiento"].value_counts()) + "\n")
 
+# Correlaciones: sirven para tener una primera idea de que variables se relacionan mas con el incumplimiento.
+
+
 #Grafico de correlaciones
 plt.figure(figsize=(8, 6))
 columnas_numericas = df.drop(columns=["id_cliente"]).columns
@@ -67,10 +71,13 @@ plt.tight_layout()
 plt.savefig(os.path.join(CARPETA_RESULTADOS, "02_balance_clases.png"))
 plt.close()
 
-# 2. Preprocesamiento: seleccion de features, split y escalamiento
+# 2. Preprocesamiento: seleccion de features, split y escalamiento.
+# id_cliente se excluye: es solo un identificador, no tiene ningun poder predictivo.
+
 X = df.drop(columns=["id_cliente", "incumplimiento"])
 y = df["incumplimiento"]
 
+# Split 80/20 estratificado: preserva la proporcion 50/50 de clases en train y test, igual que en el dataset original.
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=SEED, stratify=y
 )
@@ -81,11 +88,16 @@ print("=" * 60)
 print(f"Tamano set de entrenamiento: {X_train.shape}")
 print(f"Tamano set de prueba: {X_test.shape}")
 
+# Escalamiento: el MLP practica por descenso de gradiente y es sensible a la escala de las variables. El scaler se ajusta SOLO con train y se aplica a test, para no filtrar informacion del test al entrenamiento
+
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
 # 3. Diseno y entrenamiento del MLP
+# 2 capas ocultas (16 y 8 neuronas): es suficiente para un problema binario con 8 features y 600 registros, sin sobredimensionar el modelo.
+
+
 modelo = MLPClassifier(
     hidden_layer_sizes=(16, 8),
     activation="relu",
@@ -102,6 +114,8 @@ print("3. ENTRENAMIENTO DEL MLP")
 print("=" * 60)
 print(f"Numero de iteraciones hasta convergencia: {modelo.n_iter_}")
 print(f"Valor final de la funcion de perdida (loss): {modelo.loss_:.4f}")
+
+# Curva de perdida: confirma visualmente que el modelo aprendio.
 
 plt.figure(figsize=(6, 4))
 plt.plot(modelo.loss_curve_)
