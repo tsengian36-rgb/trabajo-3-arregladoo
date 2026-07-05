@@ -141,6 +141,7 @@ print("=" * 60)
 print(f"Accuracy en el set de prueba: {acc:.4f}")
 print("\nMatriz de confusion:")
 print(cm)
+# Interpretacion: en este contexto, un falso negativo (predecir "no incumple" cuando si incumple) es mas costoso para el banco que un falso positivo, porque implica otorgar un credito que no sera pagado.
 print("\nReporte de clasificacion:")
 print(reporte)
 print(f"\nAUC-ROC: {auc:.4f}")
